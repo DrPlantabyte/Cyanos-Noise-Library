@@ -24,26 +24,29 @@
  */
 package hall.collin.christopher.math.noise;
 
-import hall.collin.christopher.math.random.CoordinateRandom3D;
-import hall.collin.christopher.math.random.LCGCoordinateRandom3D;
+import hall.collin.christopher.math.random.CoordinateRandom2D;
+import hall.collin.christopher.math.random.LCGCoordinateRandom2D;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Class for 3D noise generation (perlin noise) that uses 
- * multiple "octaves" of noise to automatically provide arbitrary granularity. 
+ * Class for 2D noise generation (perlin noise) that uses 
+ * multiple "octaves" of noise to automatically provide arbitrary granularity and 
+ * wraps the X and/or Y axese. 
  * @author Christopher Collin Hall
  */
-public class DefaultFractalNoiseGenerator3D extends FractalNoiseGenerator3D{
+public class WrappedFractalNoiseGenerator2D extends FractalNoiseGenerator2D{
 	private final Random seeder;
-	private final ArrayList<CoordinateNoiseGenerator3D> octaves = new ArrayList<>(8);
+	private final ArrayList<CoordinateNoiseGenerator2D> octaves = new ArrayList<>(8);
 	private final ArrayList<Double> octavePrecisions = new ArrayList<>(8);
 	private final ArrayList<Double> octaveMagnitudes = new ArrayList<>(8);
 	private int lastLayerIndex = -1;
+	private int lastLayerWidth = 1;
+	private int lastLayerHeight = 1;
 	
-	private final double octaveScaleMultiplier;
+	private final double octaveScaleMultiplier = 0.5; // always double frquency for each new octave
 	private final double octaveMagnitudeMultiplier;
 	
 	private final Lock layerGenerationLock = new ReentrantLock();
@@ -51,28 +54,19 @@ public class DefaultFractalNoiseGenerator3D extends FractalNoiseGenerator3D{
 	/**
 	 * Constructs a fractal noise generator using standard psuedo-random number 
 	 * generators.
-	 * @param initialScale The initial grid spacing of the lowest frequency noise octave
+	 * @param width The wrapped size of the noise space in the X dimension, in 
+	 * number of grid units. A 0 or negative number disables wrapping.
+	 * @param height The wrapped size of the noise space in the Y dimension, in 
+	 * number of grid units. A 0 or negative number disables wrapping.
 	 * @param initialMagnitude The range of values for the lowest frequency noise octave
-	 * @param octaveScaleMultiplier How much to change the grid size for each successive 
-	 * layer of noise (must be between 0 and 1). Typically 0.5
 	 * @param octaveMagnitudeMultiplier How to change the range of values when 
 	 * generating noise octaves. Typically 0.5
 	 * @param seed The seed for the random number generator
 	 */
-	public DefaultFractalNoiseGenerator3D(double initialScale, double initialMagnitude, double octaveScaleMultiplier, double octaveMagnitudeMultiplier, long seed){
-		if(octaveScaleMultiplier >= 1 || octaveScaleMultiplier < 0) throw new IllegalArgumentException("Octave scale multiplier must be in range of (0,1)");
+	public WrappedFractalNoiseGenerator2D(int width, int height, double initialMagnitude, double octaveMagnitudeMultiplier, long seed){
 		this.seeder = new Random(seed);
-		this.octaveScaleMultiplier = octaveScaleMultiplier;
 		this.octaveMagnitudeMultiplier = octaveMagnitudeMultiplier;
-		addNoiseLayer(initialScale,initialMagnitude);
-	}
-	/**
-	 * Constructs a fractal noise generator using standard psuedo-random number 
-	 * generators using typical perlin noise starting values.
-	 * @param seed seed for random number generators
-	 */
-	public DefaultFractalNoiseGenerator3D(long seed){
-		this(1.0,1.0,0.5,0.5,seed);
+		addNoiseLayer(width,height,1.0,initialMagnitude);
 	}
 	
 	/**
@@ -83,7 +77,6 @@ public class DefaultFractalNoiseGenerator3D extends FractalNoiseGenerator3D{
 	 * grid size smaller than this value)
 	 * @param x X coordinate
 	 * @param y Y coordinate
-	 * @param z Z coordinate
 	 * @return A value interpolated from random control points, such that the 
 	 * same coordinate always results in the same output value and a coordinate 
 	 * very close to another will have a similar, but not necessarily the same, 
@@ -92,13 +85,15 @@ public class DefaultFractalNoiseGenerator3D extends FractalNoiseGenerator3D{
 	 * coordinates exceed the allowable range of the underlying algorithm.
 	 */
 	@Override
-	public double valueAt(double precision, double x, double y, double z) throws ArrayIndexOutOfBoundsException{
+	public double valueAt(double precision, double x, double y) throws ArrayIndexOutOfBoundsException{
 		if(octavePrecisions.get(lastLayerIndex) > precision){
 			layerGenerationLock.lock();
 			try{
 				while(octavePrecisions.get(lastLayerIndex) > precision){
 					// will need to add new layers
 					addNoiseLayer(
+							lastLayerWidth * 2,
+							lastLayerHeight * 2,
 							octavePrecisions.get(lastLayerIndex) * octaveScaleMultiplier,
 							octaveMagnitudes.get(lastLayerIndex) * octaveMagnitudeMultiplier
 					);
@@ -108,39 +103,65 @@ public class DefaultFractalNoiseGenerator3D extends FractalNoiseGenerator3D{
 			}
 		}
 		double sum = 0;
+		double dimensionScaler = 1.0;
 		for(int i = 0; i <= lastLayerIndex; i++){
-			sum += octaves.get(i).getValue(x, y, z) * octaveMagnitudes.get(i);
+			sum += octaves.get(i).getValue(x*dimensionScaler, y*dimensionScaler) * octaveMagnitudes.get(i);
 			if(octavePrecisions.get(i) <= precision) break;
+			dimensionScaler *= 2;
 		}
 		return sum;
 	}
 
-	private synchronized void addNoiseLayer(double scale, double magnitude) {
-		CoordinateRandom3D prng = new LCGCoordinateRandom3D(seeder.nextLong());
-		CoordinateNoiseGenerator3D layer = new DefaultCoordinateNoiseGenerator3D(prng,magnitude);
+	private synchronized void addNoiseLayer(int width, int height, double precision, double magnitude) {
+		CoordinateRandom2D prng = new LCGCoordinateRandom2D(seeder.nextLong());
+		CoordinateNoiseGenerator2D layer = new WrappedCoordinateNoiseGenerator2D(prng,width,height);
 		octaves.add(layer);
-		octavePrecisions.add(scale);
+		octavePrecisions.add(precision);
 		octaveMagnitudes.add(magnitude);
+		lastLayerWidth = width;
+		lastLayerHeight = height;
 		
 		lastLayerIndex++;
 	}
 	
 	@Deprecated // for testing and demonstration only
 	public static void main(String[] a){
-		int size = 400;
-		java.awt.image.BufferedImage bimg = new java.awt.image.BufferedImage(size,size,java.awt.image.BufferedImage.TYPE_INT_ARGB);
-		FractalNoiseGenerator3D prng = new DefaultFractalNoiseGenerator3D(System.currentTimeMillis());
-		final double p = 0.2;
-		final double s = 0.025;
-		for(int x = 0; x < size; x++){
-			for(int y = 0; y < size; y++){
-				float v = (float)prng.valueAt(p,(x-100)*s, (y-100)*s, 0) + 1;
+		
+		int imgSize = 408;
+		int tilesPerImageWidth = 4;
+		int noiseSize = 3;
+		double unitsPerPixel = (double)tilesPerImageWidth*(double)noiseSize/(double)imgSize;
+		
+		java.awt.image.BufferedImage bimg 
+				= new java.awt.image.BufferedImage(imgSize,imgSize,
+						java.awt.image.BufferedImage.TYPE_INT_ARGB
+				);
+		FractalNoiseGenerator2D prng 
+				= new WrappedFractalNoiseGenerator2D(
+						noiseSize, // width
+						noiseSize, // height
+						0.9, // magnitude
+						0.5, // magnitude scaling factor
+						System.currentTimeMillis() // random number seed
+				);
+		
+		for(int x = 0; x < imgSize; x++){
+			for(int y = 0; y < imgSize; y++){
+				float v = (float)prng.valueAt(
+							unitsPerPixel,
+							x*unitsPerPixel, 
+							y*unitsPerPixel
+				);
+				v += 1;
 				v *= 0.5f;
 				if(v < 0) v = 0f;//0.5f;
 				if(v > 1) v = 1f;//0.5f;
-				bimg.setRGB(x, y, java.awt.Color.HSBtoRGB(0, 0f, v));
+				bimg.setRGB(x, y, java.awt.Color.HSBtoRGB(0f, 0f, v));
 			}
 		}
-		javax.swing.JOptionPane.showMessageDialog(null, new javax.swing.JLabel(new javax.swing.ImageIcon(bimg)));
+		javax.swing.JOptionPane.showMessageDialog(
+				null, 
+				new javax.swing.JLabel(new javax.swing.ImageIcon(bimg))
+		);
 	}
 }

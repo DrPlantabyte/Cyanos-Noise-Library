@@ -90,6 +90,7 @@ public class DefaultFractalNoiseGenerator2D extends FractalNoiseGenerator2D{
 	 * @throws ArrayIndexOutOfBoundsException May be thrown if the provided 
 	 * coordinates exceed the allowable range of the underlying algorithm.
 	 */
+	@Override
 	public double valueAt(double precision, double x, double y) throws ArrayIndexOutOfBoundsException{
 		if(octavePrecisions.get(lastLayerIndex) > precision){
 			layerGenerationLock.lock();
@@ -123,7 +124,7 @@ public class DefaultFractalNoiseGenerator2D extends FractalNoiseGenerator2D{
 		lastLayerIndex++;
 	}
 	
-	@Deprecated
+	@Deprecated // for testing and demonstration only
 	public static void main(String[] a){
 		int size = 400;
 		java.awt.image.BufferedImage bimg = new java.awt.image.BufferedImage(size,size,java.awt.image.BufferedImage.TYPE_INT_ARGB);

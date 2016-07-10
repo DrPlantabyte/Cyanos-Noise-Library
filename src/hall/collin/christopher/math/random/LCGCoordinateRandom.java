@@ -89,7 +89,7 @@ public class LCGCoordinateRandom extends CoordinateRandom {
 		return ((x2 & 0xFFFFFFFF) << 32) | (x3 & 0xFFFFFFFF);
 	}
 	
-	@Deprecated
+	@Deprecated // for testing and demonstration only
 	public static void main(String[] a){
 		int size = 400;
 		java.awt.image.BufferedImage bimg = new java.awt.image.BufferedImage(size,size,java.awt.image.BufferedImage.TYPE_INT_ARGB);
