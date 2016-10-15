@@ -24,8 +24,9 @@
  */
 package hall.collin.christopher.math.noise;
 
-import java.util.concurrent.TimeUnit;
-import javafx.stage.Stage;
+import hall.collin.christopher.math.AbstractNumberGenerator;
+import hall.collin.christopher.math.random.DefaultRandomNumberGenerator;
+
 
 
 /**
@@ -48,10 +49,10 @@ public class SphericalSurfaceFractalNoiseGenerator extends DefaultFractalNoiseGe
 	 * layer of noise (must be between 0 and 1). Typically 0.5
 	 * @param octaveMagnitudeMultiplier How to change the range of values when 
 	 * generating noise octaves. Typically 0.5
-	 * @param seed The seed for the random number generator
+	 * @param seeder random number generator
 	 */
-	public SphericalSurfaceFractalNoiseGenerator(double radius, double initialNoiseScale, double initialNoiseMagnitude, double octaveScaleMultiplier, double octaveMagnitudeMultiplier, long seed) {
-		super(initialNoiseScale, initialNoiseMagnitude, octaveScaleMultiplier, octaveMagnitudeMultiplier, seed);
+	public SphericalSurfaceFractalNoiseGenerator(double radius, double initialNoiseScale, double initialNoiseMagnitude, double octaveScaleMultiplier, double octaveMagnitudeMultiplier, AbstractNumberGenerator seeder) {
+		super(initialNoiseScale, initialNoiseMagnitude, octaveScaleMultiplier, octaveMagnitudeMultiplier, seeder);
 		this.radius = radius;
 	}
 	/**
@@ -61,7 +62,7 @@ public class SphericalSurfaceFractalNoiseGenerator extends DefaultFractalNoiseGe
 	 * @param seed The seed for the random number generator
 	 */
 	public SphericalSurfaceFractalNoiseGenerator(long seed){
-		this(1.0,1.0,1.0,0.5,0.5,seed);
+		this(1.0,1.0,1.0,0.5,0.5,new DefaultRandomNumberGenerator(seed));
 	}
 	/**
 	 * This method will generate a Perlin Noise type of value 
@@ -88,13 +89,22 @@ public class SphericalSurfaceFractalNoiseGenerator extends DefaultFractalNoiseGe
 	
 	
 	
-	
-	private double cos(double a) {
+	/**
+	 * This method can be overridden for optimization purposes
+	 * @param a a number
+	 * @return the cosine of the number
+	 */
+	protected double cos(double a) {
 		return Math.cos(a);
 	}
 	
 	
-	private double sin(double a) {
+	/**
+	 * This method can be overridden for optimization purposes
+	 * @param a a number
+	 * @return the sine of the number
+	 */
+	protected double sin(double a) {
 		return Math.sin(a);
 	}
 	
@@ -129,7 +139,7 @@ public class SphericalSurfaceFractalNoiseGenerator extends DefaultFractalNoiseGe
 				}
 			});
 		}
-		java.util.concurrent.ForkJoinPool.commonPool().awaitQuiescence(1, TimeUnit.MINUTES);
+		java.util.concurrent.ForkJoinPool.commonPool().awaitQuiescence(1, java.util.concurrent.TimeUnit.MINUTES);
 		long t1 = System.currentTimeMillis();
 		System.out.println("Completed in " + (t1 - t0) + " ms");
 		javax.swing.JOptionPane.showMessageDialog(null, new javax.swing.JLabel(new javax.swing.ImageIcon(bimg)));

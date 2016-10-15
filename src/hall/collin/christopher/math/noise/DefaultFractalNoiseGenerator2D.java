@@ -24,7 +24,9 @@
  */
 package hall.collin.christopher.math.noise;
 
+import hall.collin.christopher.math.AbstractNumberGenerator;
 import hall.collin.christopher.math.random.CoordinateRandom2D;
+import hall.collin.christopher.math.random.DefaultRandomNumberGenerator;
 import hall.collin.christopher.math.random.LCGCoordinateRandom2D;
 import java.util.ArrayList;
 import java.util.Random;
@@ -37,7 +39,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author Christopher Collin Hall
  */
 public class DefaultFractalNoiseGenerator2D extends FractalNoiseGenerator2D{
-	private final Random seeder;
+	private final AbstractNumberGenerator seeder;
 	private final ArrayList<CoordinateNoiseGenerator2D> octaves = new ArrayList<>(8);
 	private final ArrayList<Double> octavePrecisions = new ArrayList<>(8);
 	private final ArrayList<Double> octaveMagnitudes = new ArrayList<>(8);
@@ -57,11 +59,11 @@ public class DefaultFractalNoiseGenerator2D extends FractalNoiseGenerator2D{
 	 * layer of noise (must be between 0 and 1). Typically 0.5
 	 * @param octaveMagnitudeMultiplier How to change the range of values when 
 	 * generating noise octaves. Typically 0.5
-	 * @param seed The seed for the random number generator
+	 * @param seeder random number generator
 	 */
-	public DefaultFractalNoiseGenerator2D(double initialScale, double initialMagnitude, double octaveScaleMultiplier, double octaveMagnitudeMultiplier, long seed){
+	public DefaultFractalNoiseGenerator2D(double initialScale, double initialMagnitude, double octaveScaleMultiplier, double octaveMagnitudeMultiplier, AbstractNumberGenerator seeder){
 		if(octaveScaleMultiplier >= 1 || octaveScaleMultiplier < 0) throw new IllegalArgumentException("Octave scale multiplier must be in range of (0,1)");
-		this.seeder = new Random(seed);
+		this.seeder = seeder;
 		this.octaveScaleMultiplier = octaveScaleMultiplier;
 		this.octaveMagnitudeMultiplier = octaveMagnitudeMultiplier;
 		addNoiseLayer(initialScale,initialMagnitude);
@@ -72,7 +74,7 @@ public class DefaultFractalNoiseGenerator2D extends FractalNoiseGenerator2D{
 	 * @param seed seed for random number generators
 	 */
 	public DefaultFractalNoiseGenerator2D(long seed){
-		this(1.0,1.0,0.5,0.5,seed);
+		this(1.0,1.0,0.5,0.5,new DefaultRandomNumberGenerator(seed));
 	}
 	
 	/**
