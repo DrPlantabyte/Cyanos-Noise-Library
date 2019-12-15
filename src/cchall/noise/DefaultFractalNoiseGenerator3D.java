@@ -118,7 +118,7 @@ public class DefaultFractalNoiseGenerator3D extends FractalNoiseGenerator3D{
 
 	private synchronized void addNoiseLayer(double scale, double magnitude) {
 		CoordinateRandom3D prng = new LCGCoordinateRandom3D(seeder.nextLong());
-		CoordinateNoiseGenerator3D layer = new DefaultCoordinateNoiseGenerator3D(prng,magnitude);
+		CoordinateNoiseGenerator3D layer = new DefaultCoordinateNoiseGenerator3D(prng,scale);
 		octaves.add(layer);
 		octavePrecisions.add(scale);
 		octaveMagnitudes.add(magnitude);
