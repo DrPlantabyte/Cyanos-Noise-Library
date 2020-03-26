@@ -1,4 +1,4 @@
-package noisetests;
+package cchall.noisetests;
 
 import cchall.noise.SphericalSurfaceFractalNoiseGenerator;
 import cchall.noise.math.AbstractNumberGenerator;

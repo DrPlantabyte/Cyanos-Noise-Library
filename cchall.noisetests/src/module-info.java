@@ -1,4 +1,4 @@
-module cchall.noise.tests {
+module cchall.noisetests {
 	requires cchall.noise;
 	requires java.desktop;
 	requires java.logging;
