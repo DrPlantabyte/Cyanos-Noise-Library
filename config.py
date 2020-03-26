@@ -8,6 +8,8 @@ import sys
 temp_dir = 'temp'
 build_dir = 'out'
 run_dir = 'out/run'
+jar_out_dir = 'out/jar'
+jmod_out_dir = 'out/jmod'
 module_dir='.'
 dependency_dirs=['dependencies/jars']
 jmod_dirs=['dependencies/native/jmods']
@@ -18,6 +20,8 @@ maven_deps = []
 java_exec='java'
 javac_exec='javac'
 jlink_exec='jlink'
+jar_exec='jar'
+jmod_exec='jmod'
 python_exec='python'
 maven_exec='mvn'
 

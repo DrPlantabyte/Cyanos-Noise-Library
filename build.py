@@ -41,7 +41,26 @@ def compile_module(module_name):
 
 for module_name in modules:
 	compile_module(module_name)
+# jar
+java.jar_module(
+	module_name='cchall.noise',
+	module_version='2.02',
+	compile_dir=path.join(compile_dir,'cchall.noise'),
+	output_dir=config.jar_out_dir,
+	temp_dir=config.temp_dir,
+	main_class = None,
+	jar_exec=config.jar_exec
+)
 
+java.jar_module(
+	module_name='cchall.noisetests',
+	module_version=None,
+	compile_dir=path.join(compile_dir,'cchall.noisetests'),
+	output_dir=config.jar_out_dir,
+	temp_dir=config.temp_dir,
+	main_class = 'cchall.noisetests.Test1',
+	jar_exec=config.jar_exec
+)
 
 # jlink
 java.jlink_module(

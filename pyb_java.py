@@ -14,7 +14,7 @@ def _java_command(command, args_list, temp_dir):
 	print('+'+'-'*78+'+')
 	print(command, command_args)
 	print(' '*10+'-'*60+' '*10)
-	args_file = path.join(temp_dir, str(command)+'-args.txt')
+	args_file = path.join(temp_dir, str(path.basename(command))+'-args.txt')
 	util.make_parent_dir(args_file)
 	with open(args_file, 'w') as fout:
 		fout.write(command_args)
@@ -74,6 +74,35 @@ def jlink_module(
 	_java_command(
 		command=jlink_exec,
 		args_list=jlink_args,
+		temp_dir=temp_dir
+	)
+def jar_module(
+	module_name,
+	module_version,
+	compile_dir,
+	output_dir,
+	temp_dir,
+	main_class = None,
+	jar_exec='jar'
+):
+	# modular jar example: 
+	## jar --create --file out/jar/cchall.noise.jar -C out/compile/cchall.noise .
+	## jar --create --file out/jar/cchall.noisetests.jar --main-class cchall.noisetests.Test1 -C out/compile/cchall.noisetests .
+	## java --module-path out/jar/cchall.noise.jar:out/jar/cchall.noisetests.jar --module cchall.noisetests
+	util.make_dir(temp_dir)
+	util.make_dir(output_dir)
+	if module_version != None:
+		filename='%s_V%s.jar'%(module_name, module_version)
+	else:
+		filename='%s.jar'%(module_name)
+	jar_args = ['--create']
+	jar_args += ['--file', path.join(output_dir, filename)]
+	if main_class != None:
+		jar_args += ['--main-class', main_class]
+	jar_args += ['-C', compile_dir, '.']
+	_java_command(
+		command=jar_exec,
+		args_list=jar_args,
 		temp_dir=temp_dir
 	)
 
